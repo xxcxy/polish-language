@@ -3,7 +3,7 @@
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
     "devPath": "http://localhost:1420",
-    "distDir": "../src",
+    "distDir": "../dist",
     "withGlobalTauri": true
   },
   "package": {
@@ -34,7 +34,7 @@
     },
     "systemTray": {
       "iconPath": "icons/icon.png",
-      "iconAsTemplate": true
+      "iconAsTemplate": false
     },
     "security": {
       "csp": null
