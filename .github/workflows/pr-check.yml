@@ -6,7 +6,7 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       
@@ -26,16 +26,16 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
       
-      - name: Install dependencies (ubuntu only)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
       
       - name: Install frontend dependencies
         run: npm ci
       
       - name: Check TypeScript
-        run: npx tsc --noEmit
+        run: |
+          echo "Running TypeScript check..."
+          npx tsc --noEmit
+          echo "TypeScript check completed"
       
       - name: Lint frontend
         run: npm run lint
@@ -44,11 +44,40 @@ jobs:
       - name: Check Rust formatting
         run: cd src-tauri && cargo fmt --all -- --check
       
+      - name: Build frontend
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Directory contents before build:"
+          ls -la
+          echo "Starting frontend build..."
+          npm run build
+          echo "Build command exit code: $?"
+          echo "Directory contents after build:"
+          ls -la
+      
+      - name: Verify dist directory exists
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory not found after frontend build"
+            echo "Checking for common build output directories:"
+            find . -name "dist*" -type d 2>/dev/null || echo "No dist directories found"
+            find . -name "build*" -type d 2>/dev/null || echo "No build directories found"
+            exit 1
+          fi
+          echo "Success: dist directory found"
+          echo "dist directory contents:"
+          ls -la dist/
+      
       - name: Run Clippy
         run: cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings
       
-      - name: Build frontend
-        run: npm run build
-      
       - name: Build Rust (check compilation)
-        run: cd src-tauri && cargo build
+        run: |
+          echo "Checking that dist directory exists from src-tauri perspective..."
+          ls -la dist/ || echo "dist not found in root"
+          cd src-tauri
+          echo "Current directory: $(pwd)"
+          echo "Looking for ../dist from src-tauri directory..."
+          ls -la ../dist/ || echo "../dist not found from src-tauri"
+          echo "Running cargo build..."
+          cargo build

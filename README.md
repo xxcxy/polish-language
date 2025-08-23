@@ -52,12 +52,12 @@ This project includes GitHub Actions workflows for:
 
 ### Automated Building
 - **Build & Test**: Runs on every push and PR to main branch
-- **Cross-platform builds**: Automatically builds for macOS, Windows, and Linux
+- **macOS builds**: Automatically builds for macOS
 - **PR Checks**: Validates code formatting, linting, and compilation
 
 ### Automated Releases
 - **Release Workflow**: Triggered when you push a git tag (e.g., `v1.0.0`)
-- **Multi-platform Releases**: Automatically creates releases with binaries for all platforms
+- **macOS Releases**: Automatically creates releases with macOS .dmg installer
 - **Version Management**: Use the "Version Bump" workflow to automatically update versions
 
 ### Workflows

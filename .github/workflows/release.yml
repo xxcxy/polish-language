@@ -9,21 +9,12 @@ jobs:
   release:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [macos-latest, ubuntu-20.04, windows-latest]
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
@@ -60,13 +51,11 @@ jobs:
             - Menu bar integration
             
             ### Installation
-            - **macOS**: Download the `.dmg` file
-            - **Windows**: Download the `.msi` installer
-            - **Linux**: Download the `.AppImage` or `.deb` package
+            - **macOS**: Download the `.dmg` file and install the app
             
             ### Default Shortcuts
-            - **Polish text**: `Cmd+Option+P` (macOS) / `Ctrl+Alt+P` (Windows/Linux)
-            - **Translate text**: `Cmd+Option+T` (macOS) / `Ctrl+Alt+T` (Windows/Linux)
+            - **Polish text**: `Cmd+Option+P`
+            - **Translate text**: `Cmd+Option+T`
             
             See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for setup instructions.
           releaseDraft: false
