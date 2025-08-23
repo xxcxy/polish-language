@@ -12,37 +12,70 @@
       <h1>Polish Language Settings</h1>
       <form id="settings-form">
         <div class="form-group">
-          <label for="shortcut">Global Shortcut</label>
-          <input type="text" id="shortcut" name="shortcut" placeholder="CmdOrCtrl+Shift+P" />
-          <small>Use modifiers: Cmd/Ctrl, Alt, Shift + any key</small>
+          <label for="shortcut">Polish Text Shortcut</label>
+          <input type="text" id="shortcut" name="shortcut" placeholder="CmdOrCtrl+Alt+P" />
+          <small>Shortcut to polish and improve selected text</small>
+        </div>
+
+        <div class="form-group">
+          <label for="translate-shortcut">Translate Shortcut</label>
+          <input type="text" id="translate-shortcut" name="translate-shortcut" placeholder="CmdOrCtrl+Alt+T" />
+          <small>Shortcut to translate selected text to English</small>
+        </div>
+
+        <div class="form-group">
+          <label for="provider">AI Provider</label>
+          <select id="provider" name="provider">
+            <option value="openai">OpenAI</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+          <small>Choose your preferred AI service provider</small>
         </div>
 
         <div class="form-group">
           <label for="api-key">API Key</label>
-          <input type="password" id="api-key" name="api-key" placeholder="Enter your OpenAI API key" />
+          <input type="password" id="api-key" name="api-key" placeholder="Enter your API key" />
           <small>Your API key is stored locally and never shared</small>
         </div>
 
         <div class="form-group">
           <label for="model">Model</label>
           <select id="model" name="model">
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            <option value="gpt-4">GPT-4</option>
-            <option value="gpt-4-turbo">GPT-4 Turbo</option>
-            <option value="gpt-4o">GPT-4o</option>
+            <!-- Options will be populated by JavaScript -->
           </select>
         </div>
 
         <div class="form-group">
           <label for="base-url">API Base URL</label>
-          <input type="url" id="base-url" name="base-url" placeholder="https://api.openai.com/v1" />
-          <small>Change this if using a different OpenAI-compatible API</small>
+          <input type="url" id="base-url" name="base-url" placeholder="API base URL" />
+          <small>Change this if using a custom API endpoint</small>
         </div>
 
         <div class="form-group">
           <label for="prompt">System Prompt</label>
           <textarea id="prompt" name="prompt" rows="4" placeholder="Please polish and improve the following text while maintaining its original meaning and tone:"></textarea>
           <small>This prompt will be sent to the AI model before your selected text</small>
+        </div>
+
+        <div class="form-group">
+          <h3>Notifications</h3>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="sound-enabled" name="sound-enabled" />
+              <span class="checkmark"></span>
+              Play sound when processing completes
+            </label>
+            <small>Plays a system sound when text polishing or translation finishes</small>
+          </div>
+          
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="notifications-enabled" name="notifications-enabled" />
+              <span class="checkmark"></span>
+              Show system notifications
+            </label>
+            <small>Display macOS notifications with processed text preview</small>
+          </div>
         </div>
 
         <button type="submit" id="save-button">Save Settings</button>
@@ -53,12 +86,20 @@
       <div class="usage-info">
         <h3>How to use:</h3>
         <ol>
+          <li>Choose your AI provider (OpenAI or Google Gemini)</li>
           <li>Configure your API key and preferences above</li>
           <li>Select any text in any application</li>
-          <li>Press your configured shortcut key</li>
-          <li>The polished text will be copied to your clipboard</li>
+          <li><strong>Polish text:</strong> Press your polish shortcut (default: Cmd+Option+P)</li>
+          <li><strong>Translate text:</strong> Press your translate shortcut (default: Cmd+Option+T)</li>
+          <li>The processed text will be copied to your clipboard</li>
           <li>Paste it wherever you need it</li>
         </ol>
+        
+        <h4>Getting API Keys:</h4>
+        <ul>
+          <li><strong>OpenAI:</strong> Get your key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></li>
+          <li><strong>Google Gemini:</strong> Get your key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></li>
+        </ul>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
