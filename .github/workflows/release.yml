@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Polish Language ${{ github.ref_name }}'
+          releaseBody: |
+            ## What's Changed
+            
+            ### Features
+            - Text polishing with AI (OpenAI/Gemini)
+            - Translation to English
+            - Configurable global shortcuts
+            - System notifications and sound feedback
+            - Menu bar integration
+            
+            ### Installation
+            - **macOS**: Download the `.dmg` file
+            - **Windows**: Download the `.msi` installer
+            - **Linux**: Download the `.AppImage` or `.deb` package
+            
+            ### Default Shortcuts
+            - **Polish text**: `Cmd+Option+P` (macOS) / `Ctrl+Alt+P` (Windows/Linux)
+            - **Translate text**: `Cmd+Option+T` (macOS) / `Ctrl+Alt+T` (Windows/Linux)
+            
+            See the [README](https://github.com/${{ github.repository }}/blob/main/README.md) for setup instructions.
+          releaseDraft: false
+          prerelease: false

@@ -46,6 +46,35 @@ npm run tauri dev
 npm run tauri build
 ```
 
+## CI/CD
+
+This project includes GitHub Actions workflows for:
+
+### Automated Building
+- **Build & Test**: Runs on every push and PR to main branch
+- **Cross-platform builds**: Automatically builds for macOS, Windows, and Linux
+- **PR Checks**: Validates code formatting, linting, and compilation
+
+### Automated Releases
+- **Release Workflow**: Triggered when you push a git tag (e.g., `v1.0.0`)
+- **Multi-platform Releases**: Automatically creates releases with binaries for all platforms
+- **Version Management**: Use the "Version Bump" workflow to automatically update versions
+
+### Workflows
+1. **`.github/workflows/build.yml`** - Build and test on push/PR
+2. **`.github/workflows/release.yml`** - Create releases when tags are pushed
+3. **`.github/workflows/pr-check.yml`** - Comprehensive PR validation
+4. **`.github/workflows/version-bump.yml`** - Automated version management
+
+### Creating a Release
+1. Go to Actions → "Version Bump" → "Run workflow"
+2. Choose version type (patch/minor/major)
+3. The workflow will:
+   - Update version in all config files
+   - Create a git tag
+   - Trigger the release workflow
+   - Build and publish releases for all platforms
+
 ### Configuration
 
 The app stores settings in your system's config directory:

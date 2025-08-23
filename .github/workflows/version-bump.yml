@@ -1,0 +1,67 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Bump version in package.json
+        run: npm version ${{ github.event.inputs.version_type }} --no-git-tag-version
+
+      - name: Get new version
+        id: version
+        run: echo "new_version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Update Cargo.toml version
+        run: |
+          sed -i 's/^version = ".*"/version = "${{ steps.version.outputs.new_version }}"/' src-tauri/Cargo.toml
+
+      - name: Update tauri.conf.json version
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.new_version }}"/' src-tauri/tauri.conf.json
+
+      - name: Commit changes
+        run: |
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git push
+
+      - name: Create and push tag
+        run: |
+          git tag v${{ steps.version.outputs.new_version }}
+          git push origin v${{ steps.version.outputs.new_version }}
