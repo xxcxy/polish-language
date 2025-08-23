@@ -2,16 +2,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use get_selected_text::get_selected_text;
-use tauri::{GlobalShortcutManager, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, ClipboardManager, api::notification::Notification};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use tauri::{
+    api::notification::Notification, ClipboardManager, GlobalShortcutManager, Manager, SystemTray,
+    SystemTrayEvent, SystemTrayMenu,
+};
 
 #[cfg(target_os = "macos")]
 use cocoa::appkit::{NSApp, NSApplication, NSApplicationActivationPolicyAccessory};
-
-
 
 #[derive(Serialize, Deserialize, Clone)]
 struct Settings {
@@ -63,22 +64,27 @@ impl Default for Settings {
 
 impl Settings {
     fn get_current_api_key(&self) -> String {
-        self.api_keys.get(&self.provider).cloned().unwrap_or_default()
+        self.api_keys
+            .get(&self.provider)
+            .cloned()
+            .unwrap_or_default()
     }
-    
+
     fn set_api_key(&mut self, provider: &str, api_key: &str) {
         if api_key.is_empty() {
             self.api_keys.remove(provider);
         } else {
-            self.api_keys.insert(provider.to_string(), api_key.to_string());
+            self.api_keys
+                .insert(provider.to_string(), api_key.to_string());
         }
     }
-    
+
     // Migration helper to convert old single api_key to provider-based keys
     fn migrate_legacy_api_key(&mut self) {
         if let Some(legacy_key) = &self.api_key {
             if !legacy_key.is_empty() && !self.api_keys.contains_key(&self.provider) {
-                self.api_keys.insert(self.provider.clone(), legacy_key.clone());
+                self.api_keys
+                    .insert(self.provider.clone(), legacy_key.clone());
             }
             self.api_key = None; // Clear legacy field after migration
         }
@@ -187,21 +193,24 @@ fn update_tray_icon_processing(app_handle: &tauri::AppHandle, processing: bool) 
 fn save_settings(mut settings: Settings) -> Result<(), String> {
     // Ensure legacy field is cleared
     settings.api_key = None;
-    
+
     let settings_path = get_settings_path();
     let json = serde_json::to_string_pretty(&settings)
         .map_err(|e| format!("Failed to serialize settings: {}", e))?;
-    
-    fs::write(settings_path, json)
-        .map_err(|e| format!("Failed to write settings: {}", e))?;
-    
+
+    fs::write(settings_path, json).map_err(|e| format!("Failed to write settings: {}", e))?;
+
     Ok(())
 }
 
 #[tauri::command]
 fn get_api_key_for_provider(provider: String) -> String {
     let settings = load_settings();
-    settings.api_keys.get(&provider).cloned().unwrap_or_default()
+    settings
+        .api_keys
+        .get(&provider)
+        .cloned()
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -214,7 +223,7 @@ fn save_api_key_for_provider(provider: String, api_key: String) -> Result<(), St
 #[tauri::command]
 fn load_settings() -> Settings {
     let settings_path = get_settings_path();
-    
+
     if let Ok(content) = fs::read_to_string(settings_path) {
         let mut settings: Settings = serde_json::from_str(&content).unwrap_or_default();
         settings.migrate_legacy_api_key();
@@ -226,7 +235,7 @@ fn load_settings() -> Settings {
 
 async fn polish_text_with_llm(text: &str, settings: &Settings) -> Result<String, String> {
     let client = reqwest::Client::new();
-    
+
     match settings.provider.as_str() {
         "gemini" => polish_text_with_gemini(text, settings, &client).await,
         _ => polish_text_with_openai(text, settings, &client).await,
@@ -235,16 +244,20 @@ async fn polish_text_with_llm(text: &str, settings: &Settings) -> Result<String,
 
 async fn translate_text_with_llm(text: &str, settings: &Settings) -> Result<String, String> {
     let client = reqwest::Client::new();
-    
+
     let translate_prompt = "Translate the following text to English. If the text is already in English, keep it as is. Only return the translated text without any additional explanation:";
-    
+
     match settings.provider.as_str() {
         "gemini" => translate_text_with_gemini(text, translate_prompt, settings, &client).await,
         _ => translate_text_with_openai(text, translate_prompt, settings, &client).await,
     }
 }
 
-async fn polish_text_with_openai(text: &str, settings: &Settings, client: &reqwest::Client) -> Result<String, String> {
+async fn polish_text_with_openai(
+    text: &str,
+    settings: &Settings,
+    client: &reqwest::Client,
+) -> Result<String, String> {
     let request = OpenAIRequest {
         model: settings.model.clone(),
         messages: vec![
@@ -263,7 +276,10 @@ async fn polish_text_with_openai(text: &str, settings: &Settings, client: &reqwe
 
     let response = client
         .post(&format!("{}/chat/completions", settings.base_url))
-        .header("Authorization", format!("Bearer {}", settings.get_current_api_key()))
+        .header(
+            "Authorization",
+            format!("Bearer {}", settings.get_current_api_key()),
+        )
         .header("Content-Type", "application/json")
         .json(&request)
         .send()
@@ -271,7 +287,10 @@ async fn polish_text_with_openai(text: &str, settings: &Settings, client: &reqwe
         .map_err(|e| format!("Request failed: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("API request failed with status: {}", response.status()));
+        return Err(format!(
+            "API request failed with status: {}",
+            response.status()
+        ));
     }
 
     let openai_response: OpenAIResponse = response
@@ -286,9 +305,13 @@ async fn polish_text_with_openai(text: &str, settings: &Settings, client: &reqwe
         .ok_or_else(|| "No response from API".to_string())
 }
 
-async fn polish_text_with_gemini(text: &str, settings: &Settings, client: &reqwest::Client) -> Result<String, String> {
+async fn polish_text_with_gemini(
+    text: &str,
+    settings: &Settings,
+    client: &reqwest::Client,
+) -> Result<String, String> {
     let combined_prompt = format!("{}\n\n{}", settings.prompt, text);
-    
+
     let request = GeminiRequest {
         contents: vec![GeminiContent {
             parts: vec![GeminiPart {
@@ -305,8 +328,10 @@ async fn polish_text_with_gemini(text: &str, settings: &Settings, client: &reqwe
     let url = if settings.base_url.contains("generateContent") {
         format!("{}?key={}", settings.base_url, api_key)
     } else {
-        format!("{}/v1beta/models/{}:generateContent?key={}", 
-                settings.base_url, settings.model, api_key)
+        format!(
+            "{}/v1beta/models/{}:generateContent?key={}",
+            settings.base_url, settings.model, api_key
+        )
     };
 
     let response = client
@@ -320,7 +345,10 @@ async fn polish_text_with_gemini(text: &str, settings: &Settings, client: &reqwe
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        return Err(format!("API request failed with status: {} - {}", status, error_text));
+        return Err(format!(
+            "API request failed with status: {} - {}",
+            status, error_text
+        ));
     }
 
     let gemini_response: GeminiResponse = response
@@ -336,7 +364,12 @@ async fn polish_text_with_gemini(text: &str, settings: &Settings, client: &reqwe
         .ok_or_else(|| "No response from API".to_string())
 }
 
-async fn translate_text_with_openai(text: &str, translate_prompt: &str, settings: &Settings, client: &reqwest::Client) -> Result<String, String> {
+async fn translate_text_with_openai(
+    text: &str,
+    translate_prompt: &str,
+    settings: &Settings,
+    client: &reqwest::Client,
+) -> Result<String, String> {
     let request = OpenAIRequest {
         model: settings.model.clone(),
         messages: vec![
@@ -355,7 +388,10 @@ async fn translate_text_with_openai(text: &str, translate_prompt: &str, settings
 
     let response = client
         .post(&format!("{}/chat/completions", settings.base_url))
-        .header("Authorization", format!("Bearer {}", settings.get_current_api_key()))
+        .header(
+            "Authorization",
+            format!("Bearer {}", settings.get_current_api_key()),
+        )
         .header("Content-Type", "application/json")
         .json(&request)
         .send()
@@ -363,7 +399,10 @@ async fn translate_text_with_openai(text: &str, translate_prompt: &str, settings
         .map_err(|e| format!("Request failed: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("API request failed with status: {}", response.status()));
+        return Err(format!(
+            "API request failed with status: {}",
+            response.status()
+        ));
     }
 
     let openai_response: OpenAIResponse = response
@@ -378,9 +417,14 @@ async fn translate_text_with_openai(text: &str, translate_prompt: &str, settings
         .ok_or_else(|| "No response from API".to_string())
 }
 
-async fn translate_text_with_gemini(text: &str, translate_prompt: &str, settings: &Settings, client: &reqwest::Client) -> Result<String, String> {
+async fn translate_text_with_gemini(
+    text: &str,
+    translate_prompt: &str,
+    settings: &Settings,
+    client: &reqwest::Client,
+) -> Result<String, String> {
     let combined_prompt = format!("{}\n\n{}", translate_prompt, text);
-    
+
     let request = GeminiRequest {
         contents: vec![GeminiContent {
             parts: vec![GeminiPart {
@@ -397,8 +441,10 @@ async fn translate_text_with_gemini(text: &str, translate_prompt: &str, settings
     let url = if settings.base_url.contains("generateContent") {
         format!("{}?key={}", settings.base_url, api_key)
     } else {
-        format!("{}/v1beta/models/{}:generateContent?key={}", 
-                settings.base_url, settings.model, api_key)
+        format!(
+            "{}/v1beta/models/{}:generateContent?key={}",
+            settings.base_url, settings.model, api_key
+        )
     };
 
     let response = client
@@ -412,7 +458,10 @@ async fn translate_text_with_gemini(text: &str, translate_prompt: &str, settings
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        return Err(format!("API request failed with status: {} - {}", status, error_text));
+        return Err(format!(
+            "API request failed with status: {} - {}",
+            status, error_text
+        ));
     }
 
     let gemini_response: GeminiResponse = response
@@ -431,13 +480,21 @@ async fn translate_text_with_gemini(text: &str, translate_prompt: &str, settings
 #[tokio::main]
 async fn main() {
     let tray_menu = SystemTrayMenu::new()
-        .add_item(tauri::CustomMenuItem::new("settings".to_string(), "Settings"))
+        .add_item(tauri::CustomMenuItem::new(
+            "settings".to_string(),
+            "Settings",
+        ))
         .add_native_item(tauri::SystemTrayMenuItem::Separator)
         .add_item(tauri::CustomMenuItem::new("quit".to_string(), "Quit"));
     let system_tray = SystemTray::new().with_menu(tray_menu);
 
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![save_settings, load_settings, get_api_key_for_provider, save_api_key_for_provider])
+        .invoke_handler(tauri::generate_handler![
+            save_settings,
+            load_settings,
+            get_api_key_for_provider,
+            save_api_key_for_provider
+        ])
         .system_tray(system_tray)
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
@@ -471,10 +528,10 @@ async fn main() {
             unsafe {
                 NSApp().setActivationPolicy_(NSApplicationActivationPolicyAccessory);
             }
-            
+
             let app_handle = app.handle();
             let settings = load_settings();
-            
+
             // Register the polish text global shortcut
             let polish_shortcut = settings.shortcut.clone();
             let app_handle_polish = app_handle.clone();
@@ -489,46 +546,59 @@ async fn main() {
                                 return;
                             }
                         };
-                        
+
                         if selected_text.trim().is_empty() {
                             return;
                         }
-                        
+
                         let settings = load_settings();
                         if settings.get_current_api_key().is_empty() {
                             eprintln!("API key not configured for provider: {}", settings.provider);
                             return;
                         }
-                        
+
                         // Show processing state
                         update_tray_icon_processing(&app_handle_clone, true);
-                        
+
                         match polish_text_with_llm(&selected_text, &settings).await {
                             Ok(polished_text) => {
                                 // Copy to clipboard
-                                if let Err(_) = app_handle_clone.clipboard_manager().write_text(polished_text.clone()) {
+                                if let Err(_) = app_handle_clone
+                                    .clipboard_manager()
+                                    .write_text(polished_text.clone())
+                                {
                                     eprintln!("Failed to write to clipboard");
                                 }
-                                
+
                                 // Show completion feedback
                                 if settings.sound_enabled {
                                     play_completion_sound();
                                 }
-                                
+
                                 let preview = if polished_text.len() > 100 {
                                     format!("{}...", &polished_text[..97])
                                 } else {
                                     polished_text
                                 };
-                                
-                                show_notification(&app_handle_clone, "Text Polished", &format!("Polished text copied to clipboard:\n{}", preview), &settings);
+
+                                show_notification(
+                                    &app_handle_clone,
+                                    "Text Polished",
+                                    &format!("Polished text copied to clipboard:\n{}", preview),
+                                    &settings,
+                                );
                             }
                             Err(e) => {
                                 eprintln!("Failed to polish text: {}", e);
-                                show_notification(&app_handle_clone, "Polish Failed", &format!("Failed to polish text: {}", e), &settings);
+                                show_notification(
+                                    &app_handle_clone,
+                                    "Polish Failed",
+                                    &format!("Failed to polish text: {}", e),
+                                    &settings,
+                                );
                             }
                         }
-                        
+
                         // Reset processing state
                         update_tray_icon_processing(&app_handle_clone, false);
                     });
@@ -549,46 +619,59 @@ async fn main() {
                                 return;
                             }
                         };
-                        
+
                         if selected_text.trim().is_empty() {
                             return;
                         }
-                        
+
                         let settings = load_settings();
                         if settings.get_current_api_key().is_empty() {
                             eprintln!("API key not configured for provider: {}", settings.provider);
                             return;
                         }
-                        
+
                         // Show processing state
                         update_tray_icon_processing(&app_handle_clone, true);
-                        
+
                         match translate_text_with_llm(&selected_text, &settings).await {
                             Ok(translated_text) => {
                                 // Copy to clipboard
-                                if let Err(_) = app_handle_clone.clipboard_manager().write_text(translated_text.clone()) {
+                                if let Err(_) = app_handle_clone
+                                    .clipboard_manager()
+                                    .write_text(translated_text.clone())
+                                {
                                     eprintln!("Failed to write to clipboard");
                                 }
-                                
+
                                 // Show completion feedback
                                 if settings.sound_enabled {
                                     play_completion_sound();
                                 }
-                                
+
                                 let preview = if translated_text.len() > 100 {
                                     format!("{}...", &translated_text[..97])
                                 } else {
                                     translated_text
                                 };
-                                
-                                show_notification(&app_handle_clone, "Text Translated", &format!("Translated text copied to clipboard:\n{}", preview), &settings);
+
+                                show_notification(
+                                    &app_handle_clone,
+                                    "Text Translated",
+                                    &format!("Translated text copied to clipboard:\n{}", preview),
+                                    &settings,
+                                );
                             }
                             Err(e) => {
                                 eprintln!("Failed to translate text: {}", e);
-                                show_notification(&app_handle_clone, "Translation Failed", &format!("Failed to translate text: {}", e), &settings);
+                                show_notification(
+                                    &app_handle_clone,
+                                    "Translation Failed",
+                                    &format!("Failed to translate text: {}", e),
+                                    &settings,
+                                );
                             }
                         }
-                        
+
                         // Reset processing state
                         update_tray_icon_processing(&app_handle_clone, false);
                     });
