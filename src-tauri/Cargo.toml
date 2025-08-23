@@ -10,7 +10,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "2.2", features = [] }
 
 [dependencies]
 tauri = { version = "1.5", features = [ "macos-private-api", "global-shortcut-all", "global-shortcut", "clipboard-write-text", "clipboard-read-text", "window-show", "window-set-focus", "window-create", "shell-open", "system-tray", "notification"] }
