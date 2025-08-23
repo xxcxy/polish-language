@@ -72,4 +72,12 @@ jobs:
           ls -la dist/
       
       - name: Build Rust (check compilation)
-        run: cd src-tauri && cargo build
+        run: |
+          echo "Checking that dist directory exists from src-tauri perspective..."
+          ls -la dist/ || echo "dist not found in root"
+          cd src-tauri
+          echo "Current directory: $(pwd)"
+          echo "Looking for ../dist from src-tauri directory..."
+          ls -la ../dist/ || echo "../dist not found from src-tauri"
+          echo "Running cargo build..."
+          cargo build
