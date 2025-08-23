@@ -32,7 +32,10 @@ jobs:
         run: npm ci
       
       - name: Check TypeScript
-        run: npx tsc --noEmit
+        run: |
+          echo "Running TypeScript check..."
+          npx tsc --noEmit
+          echo "TypeScript check completed"
       
       - name: Lint frontend
         run: npm run lint
@@ -45,7 +48,28 @@ jobs:
         run: cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings
       
       - name: Build frontend
-        run: npm run build
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Directory contents before build:"
+          ls -la
+          echo "Starting frontend build..."
+          npm run build
+          echo "Build command exit code: $?"
+          echo "Directory contents after build:"
+          ls -la
+      
+      - name: Verify dist directory exists
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory not found after frontend build"
+            echo "Checking for common build output directories:"
+            find . -name "dist*" -type d 2>/dev/null || echo "No dist directories found"
+            find . -name "build*" -type d 2>/dev/null || echo "No build directories found"
+            exit 1
+          fi
+          echo "Success: dist directory found"
+          echo "dist directory contents:"
+          ls -la dist/
       
       - name: Build Rust (check compilation)
         run: cd src-tauri && cargo build

@@ -15,4 +15,8 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  // Ensure build outputs to dist directory
+  build: {
+    outDir: "dist",
+  },
 }));
