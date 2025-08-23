@@ -275,7 +275,7 @@ async fn polish_text_with_openai(
     };
 
     let response = client
-        .post(&format!("{}/chat/completions", settings.base_url))
+        .post(format!("{}/chat/completions", settings.base_url))
         .header(
             "Authorization",
             format!("Bearer {}", settings.get_current_api_key()),
@@ -387,7 +387,7 @@ async fn translate_text_with_openai(
     };
 
     let response = client
-        .post(&format!("{}/chat/completions", settings.base_url))
+        .post(format!("{}/chat/completions", settings.base_url))
         .header(
             "Authorization",
             format!("Bearer {}", settings.get_current_api_key()),
@@ -496,31 +496,32 @@ async fn main() {
             save_api_key_for_provider
         ])
         .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "settings" => {
-                    if let Some(window) = app.get_window("settings") {
-                        window.show().unwrap();
-                        window.set_focus().unwrap();
-                    } else {
-                        tauri::WindowBuilder::new(
-                            app,
-                            "settings",
-                            tauri::WindowUrl::App("index.html".into()),
-                        )
-                        .title("Polish Language - Settings")
-                        .inner_size(500.0, 600.0)
-                        .resizable(false)
-                        .build()
-                        .unwrap();
+        .on_system_tray_event(|app, event| {
+            if let SystemTrayEvent::MenuItemClick { id, .. } = event {
+                match id.as_str() {
+                    "settings" => {
+                        if let Some(window) = app.get_window("settings") {
+                            window.show().unwrap();
+                            window.set_focus().unwrap();
+                        } else {
+                            tauri::WindowBuilder::new(
+                                app,
+                                "settings",
+                                tauri::WindowUrl::App("index.html".into()),
+                            )
+                            .title("Polish Language - Settings")
+                            .inner_size(500.0, 600.0)
+                            .resizable(false)
+                            .build()
+                            .unwrap();
+                        }
                     }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
                 }
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {}
-            },
-            _ => {}
+            }
         })
         .setup(|app| {
             // Hide dock icon on macOS
@@ -563,9 +564,10 @@ async fn main() {
                         match polish_text_with_llm(&selected_text, &settings).await {
                             Ok(polished_text) => {
                                 // Copy to clipboard
-                                if let Err(_) = app_handle_clone
+                                if app_handle_clone
                                     .clipboard_manager()
                                     .write_text(polished_text.clone())
+                                    .is_err()
                                 {
                                     eprintln!("Failed to write to clipboard");
                                 }
@@ -636,9 +638,10 @@ async fn main() {
                         match translate_text_with_llm(&selected_text, &settings).await {
                             Ok(translated_text) => {
                                 // Copy to clipboard
-                                if let Err(_) = app_handle_clone
+                                if app_handle_clone
                                     .clipboard_manager()
                                     .write_text(translated_text.clone())
+                                    .is_err()
                                 {
                                     eprintln!("Failed to write to clipboard");
                                 }
