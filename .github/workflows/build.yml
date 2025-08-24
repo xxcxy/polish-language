@@ -31,6 +31,8 @@ jobs:
   build:
     needs: test
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -50,9 +52,6 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
-
-      - name: Build application
-        run: npm run tauri build
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
