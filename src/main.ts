@@ -44,8 +44,8 @@ window.addEventListener("DOMContentLoaded", () => {
     },
     gemini: {
       models: [
-        { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-        { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+        { value: "gemini-flash-latest", label: "Gemini Latest Flash" },
+        { value: "gemini-pro-latest", label: "Gemini Latest Pro" },
         { value: "gemini-pro", label: "Gemini Pro" }
       ],
       baseUrl: "https://generativelanguage.googleapis.com",
